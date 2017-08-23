@@ -1,0 +1,17 @@
+{
+  "name": "rabbi",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "achu",
+  "license": "ISC",
+  "dependencies": {
+    "@slack/client": "^3.11.0",
+    "cookie-parser": "^1.4.3",
+    "express": "^4.15.4",
+    "slackbots": "^0.3.0"
+  }
+}

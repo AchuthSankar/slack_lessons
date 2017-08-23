@@ -1,0 +1,49 @@
+<html>
+    <head>
+        <script>
+            function getCookieValue(a) {
+                var b = document.cookie.match('(^|;)\\s*' + a + '\\s*=\\s*([^;]+)');
+                return b ? b.pop() : '';
+            }
+            token=getCookieValue('token')
+            bot_id="U6R45102U"
+            p=new Promise((resolve, reject)=>{
+                var xhttp = new XMLHttpRequest();
+                xhttp.onreadystatechange = function() {
+                    if (this.readyState == 4 && this.status == 200) {
+                        imchannel=JSON.parse(xhttp.responseText);
+                        channel_id=imchannel.channel.id
+                        resolve(channel_id)
+                    }
+                };
+                xhttp.open("GET", "https://slack.com/api/im.open?token="+token+"&user="+bot_id, true);
+                xhttp.send(); 
+            }).then((channel_id) => {
+                var xhttp = new XMLHttpRequest();
+                xhttp.onreadystatechange = function() {
+                    if (this.readyState == 4 && this.status == 200) {
+                        message_ack=JSON.parse(xhttp.responseText);
+                        console.log(message_ack)
+                    }
+                };
+                time=new Date()
+                xhttp.open("GET", "https://slack.com/api/chat.postEphemeral?token="+token+"&channel="+channel_id+"&text="+time+"&user="+bot_id, true);
+                xhttp.send(); 
+            })
+            // var xhttp = new XMLHttpRequest();
+            // xhttp.onreadystatechange = function() {
+            //     if (this.readyState == 4 && this.status == 200) {
+            //         imchannel=JSON.parse(xhttp.responseText);
+            //         channel_id=imchannel.channel.id
+            //     }
+            // };
+            // //https://slack.com/api/bots.info
+            // //https://slack.com/api/im.open
+            // xhttp.open("GET", "https://slack.com/api/im.open?token="+token+"&user=U6R45102U", true);
+            // xhttp.send(); 
+        </script>
+    </head>
+    <body>
+        Hello
+    </body>
+</html>
