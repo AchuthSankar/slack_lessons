@@ -1,6 +1,6 @@
 Use https://bin.equinox.io/c/4VmDzA7iaHb/ngrok-stable-windows-amd64.zip for oauth call back in slack.
 Web API: https://api.slack.com/methods
-Bots: https://achuthan.slack.com/apps/A0F7YS25R-bots
+Bots: https://achuthan.slack.com/apps/<id>-bots
 Apps: 
 
 
