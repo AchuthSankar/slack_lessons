@@ -1,9 +1,11 @@
 var Bot = require('slackbots');
 
+bot_name='rabot'
+
 // create a bot
 var settings = {
-    token: '<bot-token>',
-    name: '<bot-name>'
+    token: 'xoxb-229141034096-IEryLZvcbnla4wAk0ikr5FE8',
+    name: bot_name
 };
 var bot = new Bot(settings);
 
@@ -12,9 +14,10 @@ bot.on('start', function() {
 });
 
 bot.on('message', function(msg) {
-    if(msg.type!='desktop_notification' && msg.username!='<bot-name>') {
+    if(msg.type=='message' && msg.username!=bot_name) {
         console.log(msg)
-        bot.postMessageToUser('achu', msg.text);
+        console.log("Sending message: " + msg.channel)
+        bot.postMessage(msg.channel, msg.text);
     }
 });
 

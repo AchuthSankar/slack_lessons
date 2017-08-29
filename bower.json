@@ -1,0 +1,18 @@
+{
+  "name": "rabbi",
+  "description": "",
+  "main": "main.js",
+  "authors": [
+    "achu"
+  ],
+  "license": "ISC",
+  "homepage": "https://github.com/AchuthSankar/slack_lessons",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}

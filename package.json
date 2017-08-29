@@ -12,6 +12,7 @@
     "@slack/client": "^3.11.0",
     "cookie-parser": "^1.4.3",
     "express": "^4.15.4",
+    "paper-button": "github:PolymerElements/paper-button",
     "slackbots": "^0.3.0"
   }
 }

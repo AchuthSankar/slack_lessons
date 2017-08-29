@@ -6,7 +6,7 @@ var cookieParser = require('cookie-parser');
 // Store our app's ID and Secret. These we got from Step 1. 
 // For this tutorial, we'll keep your API credentials right here. But for an actual app, you'll want to  store them securely in environment variables. 
 var clientId = '229696173028.230273120562';
-var clientSecret = '<client_secret>';
+var clientSecret = '145240e7bb336500150c7c233309b302';
 
 // Instantiates Express and assigns our app variable to it
 var app = express();
@@ -24,7 +24,8 @@ app.listen(PORT, function () {
 });
 
 app.use(cookieParser())
-app.use('/static', express.static('public'))
+app.use('/static', express.static('../public'))
+app.use('/bower_components', express.static('../bower_components'))
 
 
 // This route handles GET requests to our root ngrok address and responds with the same "Ngrok is working message" we used before
@@ -54,9 +55,10 @@ app.get('/oauth', function(req, res) {
             } else {
                 //res.json(body);
                 data=JSON.parse(body)
-                console.log(data['access_token'])
+                console.log(data)
                 res.cookie('token', data['access_token'])
-                res.redirect(302, '/static/connect.html'); 
+                // res.send("Auth success");
+                res.redirect(302, '/static/slack_oauth_close.html'); 
             }
         })
     }

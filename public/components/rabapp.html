@@ -1,0 +1,335 @@
+<link rel="import" href="/bower_components/polymer/polymer-element.html">
+<link rel="import" href="/bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="/bower_components/iron-list/iron-list.html">
+<link rel="import" href="/bower_components/iron-label/iron-label.html">
+<link rel="import" href="/bower_components/paper-item/paper-item.html">
+<link rel="import" href="/bower_components/paper-card/paper-card.html">
+<link rel="import" href="/bower_components/iron-label/iron-label.html">
+<link rel="import" href="/bower_components/paper-button/paper-button.html">
+<link rel="import" href="/bower_components/paper-input/paper-input.html">
+<link rel="import" href="/bower_components/paper-dialog/paper-dialog.html">
+<link rel="import" href="/bower_components/paper-fab/paper-fab.html">
+<link rel="import" href="/bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="/bower_components/polymer/lib/mixins/gesture-event-listeners.html">
+
+<dom-module id="a-rabapp">
+    <template>
+        <style>
+            :host {
+                display: inline-block;
+                max-height: 90%;
+                min-width: 500px;
+            };
+            paper-fab {
+                display: inline-block;
+                margin: 8px;
+            }
+
+            paper-fab[mini] {
+                --paper-fab-background: black;
+            }
+
+            paper-fab[label] {
+                font-size: 20px;
+                --paper-fab-background: #2196F3;
+            }
+            .toolbar {
+                display: flex;
+                background: lightslategray;
+                padding: 10px;
+            }
+            .toolbar > paper-input {
+                width: 100%;
+            }
+            paper-card.chat-window {
+                min-height: 80%;
+                min-width: 100%;
+                max-width: 100%;
+                max-height: 80%;
+                overflow-x: None;
+                overflow-y: auto;
+            };
+            .incoming {
+                margin: 10px;
+                min-height: 30px;
+                height: 15%;
+                text-align: right;
+            };
+            .outgoing {
+                margin: 10px;
+                min-height: 30px;
+                height: 15%;
+            };
+            .chat { @apply(--paper-font); }
+            .chat {
+                border-radius: 10px;
+                width: 80%;
+                height: 100%;
+                padding: 10px;
+            }
+            .outgoing > .chat {
+                background: lightblue;
+                color: blue;
+            };
+            .incoming > .chat {
+                background: lightgreen;
+                color: green;
+            };
+            
+        </style>
+        <iron-ajax 
+        id="startWebsocket"
+        url="https://slack.com/api/rtm.connect"
+        params="[[getRTMParams]]"
+        handle-as="json"
+        on-response="fetchWSSHandler"
+        ></iron-ajax>
+        <iron-ajax
+        id="createDirectChannel"
+        url="https://slack.com/api/im.open"
+        params="[[getCreateDirectChannelParams]]"
+        handle-as="json"
+        on-response="fetchChannelIDHandler"
+        ></iron-ajax>
+        <iron-ajax
+        id="sendMessage"
+        url="https://slack.com/api/chat.postMessage"
+        params="[[getSendMessageParams]]"
+        handle-as="json"
+        on-response="fetchMessageResponseDetail"
+        ></iron-ajax>
+        <iron-ajax
+        id="getBotDetail"
+        url="https://slack.com/api/bots.info"
+        handle-as="json"
+        on-response="fetchBotDetail"
+        ></iron-ajax>
+        <iron-ajax
+        id="getUserDetail"
+        url="https://slack.com/api/users.info"
+        handle-as="json"
+        on-response="fetchUserDetail"
+        ></iron-ajax>
+        <iron-ajax
+        id="getMyIdentity"
+        url="https://slack.com/api/users.identity"
+        handle-as="json"
+        on-response="fetchMyDetail"
+        ></iron-ajax>
+        <paper-card id="chat_window" class="chat-window">
+            <dom-repeat items="[[chats]]" on-dom-change="scrollBottom">
+                <template>
+                    <div class$="[[item.type]]">
+                        <paper-card class="chat" on-tap="showMessageInDialog">
+                                <div class="card-content">
+                                    <div class="chat-header">
+                                        <img src="[[item.image]]"/>[[item.from]]
+                                    </div>
+                                    <hr>
+                                    <div class="chat-light">   
+                                        [[item.text]]
+                                    </div>
+                                </div>
+                        </paper-card>
+                    </div>
+                </template>
+            </dom-repeat>
+        </paper-card>
+        <paper-card class="toolbar">
+            <paper-input value="{{message::keyup}}" on-change="sendMessageHandler"></paper-input> 
+            <paper-fab on-tap="sendMessageHandler" mini icon="send"></paper-fab>
+        </paper-card>
+        <paper-dialog id="showDialog" hidden>
+            <paper-dialog-scrollable>
+                [[chatDialog]]
+            </paper-dialog-scrollable>
+            <div class="buttons">
+                <paper-button dialog-dismiss>Close</paper-button>
+            </div>
+        </paper-dialog>
+    </template>
+    <script>
+        function getCookieValue(a) {
+            var b = document.cookie.match('(^|;)\\s*' + a + '\\s*=\\s*([^;]+)');
+            return b ? b.pop() : '';
+        }
+        class RabApp extends Polymer.GestureEventListeners(Polymer.Element) {
+            static get is() {return "a-rabapp"}
+            static get properties() {
+                return {
+                    tokenId: {
+                        type: String
+                    },
+                    my_id: {
+                        type: String
+                    },
+                    rabotId: {
+                        type: String,
+                        reflectToAttribute: true
+                    },
+                    channelId: {
+                        type: String
+                    },
+                    message: {
+                        type: String,
+                        value: ""
+                    },
+                    chatDialog: {
+                        type: String
+                    },
+                    chats: {
+                        type: Array
+                    },
+                    getRTMParams: {
+                        type: String,
+                        computed: "computeRTMParams(tokenId)"
+                    },
+                    getCreateDirectChannelParams: {
+                        type: String,
+                        computed: "computedCreateDirectChannelParams(tokenId, rabotId)"
+                    },
+                    getSendMessageParams: {
+                        type: String,
+                        computed: "computedSendMessageParams(tokenId, rabotId, channelId, message)"
+                    },
+                    socket: {
+                        type: WebSocket
+                    },
+                    user_infos: {
+                        type: Object,
+                        value: {}
+                    }
+                }
+            }
+            tokenChecker() {
+                this.oauth_window = window.open('/static','slack oauth', "width=400, height=400, menubar=0", true);
+                let checker = function(rabapp) {
+                    rabapp.tokenId=getCookieValue('token')
+                    console.log(rabapp.tokenId)
+                    if(rabapp.tokenId) {
+                        rabapp.oauth_window.close()
+                        rabapp.set("chats", [])
+                        rabapp.$.startWebsocket.generateRequest()
+                        rabapp.$.createDirectChannel.generateRequest()
+                        rabapp.$.getUserDetail.set("params", {token: rabapp.tokenId, user: rabapp.rabotId})
+                        rabapp.$.getUserDetail.generateRequest()
+                        rabapp.$.getMyIdentity.set("params", {token: rabapp.tokenId})
+                        rabapp.$.getMyIdentity.generateRequest()
+                    } else {
+                        console.log("focus")
+                        rabapp.oauth_window.focus()
+                        setTimeout(checker, 3000, rabapp);
+                    }
+                }
+                checker(this)
+            }
+            connectedCallback() {
+                super.connectedCallback();
+                this.tokenChecker();
+            }
+            computeRTMParams(tokenId) {
+                return {
+                    token: tokenId
+                }
+            }
+            computedCreateDirectChannelParams(tokenId, rabotId) {
+                console.log(rabotId)
+                return {
+                    token: tokenId,
+                    user: rabotId
+                }
+            }
+            computedSendMessageParams(tokenId, rabotId, channelId, message) {
+                return {
+                    token: tokenId,
+                    channel: channelId,
+                    user: rabotId,
+                    text: message,
+                    as_user: true
+                }
+            }
+            fetchWSSHandler(data) {
+                console.log(data.detail.response)
+                if(data.detail.response.ok===true) {
+                    console.log(data.detail.response.url)
+                    this.socket = new WebSocket(data.detail.response.url);
+                    this.socket.onerror = (error) => {
+                        console.log(error)
+                    };
+                    this.socket.onopen = (event) => {
+                        console.log(event)
+                    }
+                    this.socket.onmessage = (event) => {
+                        data=JSON.parse(event.data)
+                        data.id = data.id || data.bot_id
+                        if(data.type==="message" && data.id && data.username=="rabot") {
+                            console.log(data)
+                            let image=""
+                            if(this.user_infos[data.id]==undefined) {
+                                this.$.getBotDetail.set("params", {token: this.tokenId, bot: this.rabotId})
+                                this.$.getBotDetail.generateRequest()
+                            } else {
+                                image=(this.user_infos[data.id]).profile.image_24
+                            }
+                            console.log(image)
+                            this.push("chats", {
+                                text: data.text, 
+                                type: "incoming", 
+                                from: data.username,
+                                image: image
+                            })
+                            console.log(this.chats)
+                        }
+                    }
+                }
+            }
+            fetchChannelIDHandler(data) {
+                console.log(data.detail.response)
+                if(data.detail.response.ok===true) {
+                   this.channelId=data.detail.response.channel.id
+                }
+            }
+            fetchUserDetail(data) {
+                console.log(data.detail.response)
+                this.user_infos[data.detail.response.user.id]=data.detail.response.user
+            }
+            fetchBotDetail(data) {
+                console.log(data.detail.response)
+                this.user_infos[data.detail.response.bot.id]=data.detail.response.bot
+            }
+            fetchMyDetail(data) {
+                console.log(data.detail.response)
+                this.my_id=data.detail.response.user.id
+                this.$.getUserDetail.set("params", {token: this.tokenId, user: data.detail.response.user.id})
+                this.$.getUserDetail.generateRequest()
+            }
+            fetchMessageResponseDetail(data) {
+                console.log(data.detail.response)
+            }
+            sendMessageHandler() {
+                if (this.message=="")
+                    return;
+                let image=(this.user_infos[this.my_id]).profile.image_24
+                console.log(image)
+                this.push("chats", {
+                    text: this.message, 
+                    type: "outgoing", 
+                    from: "Me",
+                    image: image})
+                console.log(this.chats)
+                this.$.sendMessage.generateRequest()
+                this.message=""
+            }
+            scrollBottom() {
+                console.log("came")
+                this.$.chat_window.scrollTop=this.$.chat_window.scrollHeight;
+            }
+            showMessageInDialog(event) {
+                console.log(event.target.children[0].textContent)
+                this.chatDialog=event.target.children[0].textContent
+                this.$.showDialog.open();
+            }
+        }
+        customElements.define(RabApp.is, RabApp)
+    </script>
+</dom-module>

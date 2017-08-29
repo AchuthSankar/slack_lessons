@@ -1,0 +1,19 @@
+<link rel="import" href="/bower_components/polymer-redux/polymer-redux.html">
+<dom-module id="redux-store">
+    <script>
+        const rfsState= {
+            rfs: []
+        }
+        const rfsStore= (state, action) => {
+            if(!state) {
+                return rfsState
+            }
+            switch(action.type) {
+                case "RFS_ASSIGNED": {
+                    
+                }
+            }
+        }
+        Redux.createStore()
+    </script>
+</dom-module>
